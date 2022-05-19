@@ -1,7 +1,7 @@
 # computer_networking
 
 * ## [introduction](#001) #
-
+* ## [Application layer](#002) #
 
 
 ****
@@ -9,7 +9,10 @@
 <h1 id="001">introduction</h1> 
 
 * ## [Network edge](#0011) #
-
+* ## [Network core](#0012) #
+* ## [Access networks and physical media](#0013) #
+* ## [Encapsulation](#0014) #
+* ## [RTT](#0015) #
 
 
 <h2 id="0011">Network edge</h2> 
@@ -82,7 +85,7 @@
       * 老舊方法，速度慢，不能同時上網與講電話
     * ADSL: asymmetric digital subscriber line
       * asymmetric 的意思就是上傳與下載速度不一樣。
-      * [FDM](https://zh.wikipedia.org/zh-tw/%E9%A2%91%E5%88%86%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8)
+      * [FDM(把線路依照頻率切割成很多頻道)](https://zh.wikipedia.org/zh-tw/%E9%A2%91%E5%88%86%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8)
   * cable modems：
     * HFC: hybrid fiber coaxial cable(光纖與銅軸混合)
 * Company access：
@@ -104,10 +107,19 @@
 * network 層的單位叫做 datagram
 * link 層的單位叫做 frame
 
+<h2 id="0015">RTT</h2> 
+
+* RTT：Round-trip delay time
+  * time to send a small packet to travel from client to server and back.
+
 
 <h1 id="002">Application layer</h1> 
 
 
+* ## [overview](#0021) #
+* ## [Web and HTTP](#0022) #
+* ## [FTP](#0023) #
+* ## [Encapsulation](#0014) #
 
 <h2 id="0021">overview</h2> 
 
@@ -150,20 +162,20 @@
 
 
 
-
 <h2 id="0022">Web and HTTP</h2> 
 
 * Web page：
-  * consists of objects
-  * an object is a file such as an HTML file, a JPEG image, a Java applet, an audio file,…
-  * A Web page consists of a base HTML-file and several referenced objects
-  * The base HTML file references the other objects in the page with the object’s URLs (Uniform Resource Locators)
-* HTTP: hypertext transfer protocol
-  * HTTP is “stateless”：server maintains no information about past client requests
+  * 由 objects 組成
+  * object 可能是 file (例如 HTML file, JPEG image, Java applet, audio file,…)
+  * Web page 是由 base HTML-file 和若干個 referenced objects 所組成
+  * base HTML file 藉由 object 的 URLs(Uniform Resource Locators) references 到其他的 objects
+* HTTP: hypertext transfer protocol 
+  * Base on TCP
+  * HTTP is “stateless”：server 不會 maintains 所有之前的 client requests 的 information
   * 過程：
     * client 發起 TCP 連線(creates socket)
     * server accepts TCP connection from client
-    * HTTP messages (application-layer protocol messages) exchanged between browser (HTTP client) and Web server (HTTP server)
+    * HTTP messages (application-layer protocol messages) 在 browser (HTTP client) 與 Web server (HTTP server) 之間交換訊息
     * TCP connection closed
   * HTTP/1.0 
     * uses nonpersistent HTTP
@@ -185,17 +197,14 @@
 
   * [HTTP/2](https://notfalse.net/39/http-message-format)
 
-* RTT：Round-trip delay time
-  * time to send a small packet to travel from client to server and back.
-
 * HTTP request：
   * HTTP/1.0 Method Type：
     * GET : Return the object 
     * POST : Send information to be stored on the server 
-    * HEAD：Return only information about the object, such as how old it is, but not the object itself
+    * HEAD：Return only information about the object(Metadata), such as how old it is, but not the object itself
   * HTTP/1.1 Method Type：
     * GET, POST, HEAD
-    * PUT：Uploads a new copy of existing object in entity body to path specified in URL field
+    * PUT：Uploads a new copy of existing object in entity body to path specified in URL field(update 一個新版本的 object 再貼回去)
     * DELETE：deletes object specified in the URL field
   * message_format：
     * ![HTTP_request_message_format](https://github.com/a13140120a/computer_networking/blob/master/imgs/HTTP_request_message_format.PNG)
@@ -207,18 +216,38 @@
 
 * `telnet www.eurecom.fr 80`：與 www.eurecom.fr port 80 建立 telnet 連線
 * `GET www.google.com HTTP/1.1`：使用 GET 方法去 request
+
+
+* Authorization : control access to server content
+  * stateless: 因為是 stateless 所以每個 request 都必須包含 Authorization 在裡面
+  * 當 browser 保持打開狀態時，用戶名和密碼會被 cache，因此不會提示用戶為每個請求輸入用戶名和密碼
+
+
 * cookies：
   * Four components of cookie technology:
-    * cookie header line in the HTTP response message
-    * cookie header line in HTTP request message
-    * cookie file kept on user’s host and managed by user’s browser
-    * back-end database at Web site
+    * cookie header line in the HTTP response message (訪問網站的時候一開始 web server 會先給你一個 cookie)
+    * cookie header line in HTTP request message (往後訪問網站的時候就可以帶著這個拿到的 cookie 去 request)
+    * cookie file kept on user’s host and managed by user’s browser (cookie 通常會由 user 的 browser 保管)
+    * back-end database at Web site (網站的 database 也會保存一份 cookie 這樣 user 來訪問時，就可以去查詢並比對)
+  * what cookie can bring：
+    * authorization
+    * shopping carts
+    * recommendations
+    * user session state (Web e-mail)
+
+* Web caches (proxy server)：
+  * 可以做流量控管
+  * 可以增加 request 的速度 (proxy server 如果架在 client 端的區網的話，就可以避免 server 太多人訪問而造成速度下降的問題)
+  * ![proxy_server](https://github.com/a13140120a/computer_networking/blob/master/imgs/proxy_server.PNG)
+
+
 
 <h2 id="0023">FTP</h2> 
 
 * FTP: the file transfer protocol
+* FTP server 會 maintain "state"
 
-* 分成 TCP control connection 還有 TCP data connection：
+* FTP 要建兩個連線，分成 TCP control connection 還有 TCP data connection：
   * TCP control connection： port 21
     * [FTP Client Commands](https://www.ibm.com/docs/en/scbn?topic=SSRJDU/gateway_services/ftp_globalec/SCN_Summary_of_FTP_Client_Commands_b.html)
     * [FTP server return codes](https://en.wikipedia.org/wiki/List_of_FTP_server_return_codes)
@@ -228,6 +257,15 @@
 
 
 <h2 id="0024">Electronic Mail</h2> 
+
+* SMPT：port 25，用於 mail server 與 mail server 之間的溝通。
+  * 分成三步驟：
+    * handshaking (greeting)
+    * transfer of messages
+    * closure
+  * commands: 7-bit ASCII
+  * response: status code and phrase
+
 
 * SMTP, POP3, IMAP
 

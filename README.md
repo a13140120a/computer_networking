@@ -161,7 +161,6 @@
   * 靠 port 找 process
 
 
-
 <h2 id="0022">Web and HTTP</h2> 
 
 * Web page：
@@ -265,9 +264,93 @@
     * closure
   * commands: 7-bit ASCII
   * response: status code and phrase
+* [MIME](https://zh.wikipedia.org/zh-tw/%E5%A4%9A%E7%94%A8%E9%80%94%E4%BA%92%E8%81%AF%E7%B6%B2%E9%83%B5%E4%BB%B6%E6%93%B4%E5%B1%95#MIME_headers)：多用途網際網路郵件擴展（Multipurpose Internet Mail Extensions）是一個網際網路標準，它擴展了電子郵件標準
+
+* Mail access protocols：
+  * user 存取 mail server 的方式(protocal)
+  * 有以下三種：
+    * HTTP, POP3, IMAP
+
+<h2 id="0024">DNS</h2> 
+
+* DNS(Domain Name System)：
+  * 將 domain name map 到 IP address
+  * 實作於 applocation layer 
+  * 提供 core Internet function 
+  * 是一個「複雜的設計應該在"edge"，越接近 core 應該越簡單」的設計的例子。
+  * 是一個 distributed database implemented in hierarchy of many name servers
+    * ![DNS](https://github.com/a13140120a/computer_networking/blob/master/imgs/DNS.PNG)
+    * 分成四種類型的 name service：
+      * root name servers：Client queries a root server to find "com" DNS server
+      * top level name servers(頂級域, Top-level Domain, TLD）)：Client queries com DNS server to get (例如)amazon.com DNS server
+      * authoritative name servers：Client queries amazon.com DNS server to get  IP address for www.amazon.com (真正有儲存 name 和 IP 的 server)
+      * local name servers：each ISP, company has local (default) name server(host 的 DNS query 會先到 local name servers 去查，查不到的話才會往 root server 去查)
+    * [全球13個 root name servers](https://zh.wikipedia.org/zh-tw/%E6%A0%B9%E7%B6%B2%E5%9F%9F%E5%90%8D%E7%A8%B1%E4%BC%BA%E6%9C%8D%E5%99%A8#%E7%AE%A1%E7%90%86%E6%9C%BA%E6%9E%84%E5%8F%8A%E8%AE%BE%E7%BD%AE%E5%9C%B0%E7%82%B9)
+
+* aliasing：
+  * Host aliasing：
+    * 又分成 Canonical 和 alias names：
+      * Canonical：較正規的、正式的，例如：Relay1.west-coast.enterprise.com
+      * alias：較友善、好記的，例如：enterprise.com 或者 www.enterprise.com
+    * 一個 Canonical name 可以對應到好多個不同的 IP ，如此一來便可以分散流量
+  * Mail server aliasing：
+    * 例如：**Relay1.west-coast.hotmail.com** 就會變成 **bob@hotmail.com**
+
+* Recursive and iterated queries：
+  * Recursive：當一個 domain name server 查不到該網域時，他會幫你去查
+  * iterated：當一個 domain name server 查不到該網域時，他會直接跟你說他查不到
+  * ![dns_recursive_iter](https://github.com/a13140120a/computer_networking/blob/master/imgs/dns_recursive_iter.PNG)
+
+* Caching：
+  * DNS 會把以前查過的 IP 跟 Domain name 存起來
+  * 每個 cache 都會有一個 timeout 的時間(通常是兩天)，超過這個時間就會被刪除
+  * RR(resource record)：DNS 中的每一筆紀錄都叫做 RR，其 format 就像 (name, value, type, ttl(timeout 時間))，RR 又可以依照 type 分成以下四種：
+    * Type=A：
+      * name = host name，value = IP address，例如 (relay1.bar.foo.com, 145.37.93.126, A, ttl)
+    * Type=NS：
+      * name = domain(e.g. foo.com)，value = host name(domain 所對應到的 host name，例如 dns.foo.com)，一筆紀錄就像 (foo.com, dns.foo.com, NS)
+    * Type=CNAME：
+      * value = canonical name，name 是 value 所對應的 alias name，例如 (foo.com, relay1.bar.foo.com, CNAME)
+    * Type=MX：
+      * mail 專用的 type，name = alias name for some mail server，value = the canonical name of the mail server，例如 (foo.com, mail.bar.foo.com, MX)
+
+* 封包格式：
+  * query 跟 reply 使用的是相同的格式。
+  * ![DNS_message_format](https://github.com/a13140120a/computer_networking/blob/master/imgs/DNS_message_format.png)
+  * identification：因為一次可能同時發出很多的 query，這個欄位就是為了能夠分辨 reply 是屬於哪個 query 的(發出去的 query 與對應的 reply message id 相同)。
+  * flag：這個欄位用來標註此封包是 query 還是 reply ，如果是 query 是不是需要 recursion，又如果是 reply 的話，recursion 可不可用。
+  * questions：帶著 RR 的 name 跟 type 去查詢
+  * answer：response to query(一個 hostname 可以對應多個 IP)
+  * 
 
 
-* SMTP, POP3, IMAP
+<h2 id="0024">P2P File sharing</h2> 
+
+* 當 user(也就是其中一個 peer)想要獲得一份檔案的時候，可以藉由其他 peer 來獲得檔案的各個部份，以此減輕 server 的負擔，或甚至不需要 server
+* 分成 centralized directory 跟 Query flooding：
+  * centralized directory：
+    * 依靠一個 central server 來提供每個 query 哪個檔案的哪個部分放在哪個 IP 的 Host 上面，
+    * 缺點是當 central server 壞掉時，整個 P2P 都會 Crash 掉。
+    * 另一個缺點是會有效能的瓶頸
+  * Query flooding(以 Gnutella 為例)：
+    * 不需要 central server
+    * 當某個 user query 某個檔案的部分的時候，user host 會向自己所連接的其他 peer 發出 query，如果這個 peer 沒有的話，再詢問另一個 peer(這種行為就稱為 Query flooding)。
+    * 如果找到需要的檔案部分的話，稱為 query hit。
+    * flooding 會有一些避免 query 氾濫的機制，例如最多連接到第幾次，或者檢查該 query 是否已經處理過了。
+
+* peer join(以 Gnutella 為例)：
+  * 首先欲加入的 peer x 會先有一個 candidate peers 的清單
+  * x 會一個一個地嘗試與清單中的 peer 連線，先 ping 看看，如果有回應的話就建 TCP 連線。
+
+* KaZaA：
+  * 每個 peer 型成一個一個的 group，然後一個 group 會有一個 leader
+  * leader 之間彼此連線
+  * 每個 group 的成員都連接到 leader
+  * leader 會有每個 group children 存放那些檔案部分的資訊
+  * ![KaZaA](https://github.com/a13140120a/computer_networking/blob/master/imgs/KaZaA.PNG)
+  * 每個 file 都會有一個 hash 值和一個 descriptor(類似 metadata)，client 送出 keyword 讓 leader 去查詢(利用 hash 和 descriptor 來做比對)，然後傳回 match 的資訊，之後 client 會從這些資訊當中去找擁有檔案的 peer 來下載。
+
+
 
 
 
